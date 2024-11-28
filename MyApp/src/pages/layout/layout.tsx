@@ -1,106 +1,102 @@
-import React from 'react';
-import { LaptopOutlined, NotificationOutlined, UserOutlined } from '@ant-design/icons';
-import { Breadcrumb, Layout, Menu, theme } from 'antd';
-const { Header, Content, Footer, Sider } = Layout;
-const items1 = ['1', '2', '3'].map((key) => ({
-  key,
-  label: `nav ${key}`,
-}));
-const items2 = [UserOutlined, LaptopOutlined, NotificationOutlined].map((icon, index) => {
-  const key = String(index + 1);
-  return {
-    key: `sub${key}`,
-    icon: React.createElement(icon),
-    label: `subnav ${key}`,
-    children: new Array(4).fill(null).map((_, j) => {
-      const subKey = index * 4 + j + 1;
-      return {
-        key: subKey,
-        label: `option${subKey}`,
-      };
-    }),
-  };
-});
-const layout = () => {
+import React, { useState } from 'react';
+import { useSelector } from'react-redux'
+import { 
+  Breadcrumb, 
+  Layout, 
+  Menu, 
+  theme,
+  Avatar,
+  Button,
+} from 'antd'
+import { RootState } from '../../store'
+import { UserOutlined, MenuUnfoldOutlined, MenuFoldOutlined } from '@ant-design/icons';
+import { Link } from 'react-router-dom'
+import type { MenuProps } from 'antd';
+import type { MenuItem } from '../type'
+
+const { Header, Content, Sider } = Layout;
+
+const layout: React.FC= (props) => {
+  // 菜单栏收起状态
+  const [collapsed, setCollapsed] = useState(false)
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+  
+  //接口数据
+  const userInfo = useSelector((state: RootState) => state.user.userInfo)
+  const menuList = useSelector((state: RootState) => state.user.menuList)
+  console.log(userInfo)
+  console.log(menuList)
+
+  // 处理菜单数据
+  const format = (list: MenuItem[]): MenuProps['items'] => {
+    if (!list || list.length === 0) return[]
+    return list.map((item: MenuItem) => {
+      const other = item.children? { children: format(item.children)} : {}
+      return {
+        key: item.path,
+        label: item.children? item.name : <Link to={item.path}>{item.name}</Link>,
+        ...other
+      }
+    })
+  }
+  const baseItem: MenuProps['items']  = [{ label: <Link to="/">首页</Link>, key: '/' }]
+
   return (
-    <Layout>
-      <Header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-        }}
-      >
+    <Layout style={{ height: '100vh' }}>
+      {/* 头 */}
+      <Header style={{ display: 'flex', alignItems: 'center' ,justifyContent:'flex-end'}}>
         <div className="demo-logo" />
-        <Menu
-          theme="dark"
-          mode="horizontal"
-          defaultSelectedKeys={['2']}
-          items={items1}
-          style={{
-            flex: 1,
-            minWidth: 0,
-          }}
-        />
+        <Avatar size={64} icon={<UserOutlined />} src={userInfo?.avator}/>
+        <p style={{color: '#fff',fontSize: '18px'}}>{userInfo?.username}</p>
       </Header>
-      <Content
-        style={{
-          padding: '0 48px',
-        }}
-      >
-        <Breadcrumb
-          style={{
-            margin: '16px 0',
-          }}
+      <Layout>
+        {/* 左侧导航 */}
+        <Sider width={200} style={{ background: colorBgContainer }}
+        trigger={null} collapsible collapsed={collapsed}
         >
-          <Breadcrumb.Item>Home</Breadcrumb.Item>
-          <Breadcrumb.Item>List</Breadcrumb.Item>
-          <Breadcrumb.Item>App</Breadcrumb.Item>
-        </Breadcrumb>
-        <Layout
-          style={{
-            padding: '24px 0',
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-          }}
-        >
-          <Sider
-            style={{
-              background: colorBgContainer,
-            }}
-            width={200}
+          <Menu
+            mode="inline"
+            defaultSelectedKeys={['1']}
+            defaultOpenKeys={['sub1']}
+            style={{ height: '100%', borderRight: 0 }}
+            items={(baseItem.concat(format(menuList)))}
           >
-            <Menu
-              mode="inline"
-              defaultSelectedKeys={['1']}
-              defaultOpenKeys={['sub1']}
-              style={{
-                height: '100%',
-              }}
-              items={items2}
-            />
-          </Sider>
+          </Menu>
+           <Button
+            type="text"
+            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            onClick={() => setCollapsed(!collapsed)}
+            style={{
+              fontSize: '10px',
+              width: 64,
+              height: 64,
+            }}
+          />
+        </Sider>
+        <Layout style={{ padding: '0 24px 24px' }}>
+          {/* 面包屑 */}
+          <Breadcrumb
+            items={[{ title: 'Home' }, { title: 'List' }, { title: 'App' }]}
+            style={{ margin: '16px 0' }}
+          />
+          {/* 内容 */}
           <Content
             style={{
-              padding: '0 24px',
+              padding: 24,
+              margin: 0,
               minHeight: 280,
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
             }}
           >
-            Content
+            {props.children}
           </Content>
         </Layout>
-      </Content>
-      <Footer
-        style={{
-          textAlign: 'center',
-        }}
-      >
-        Ant Design ©{new Date().getFullYear()} Created by Ant UED
-      </Footer>
+      </Layout>
     </Layout>
   );
 };
-export default layout
 
+export default layout

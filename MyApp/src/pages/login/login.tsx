@@ -12,6 +12,10 @@
   import { getLoginApi,captchaApi } from '../../services/index'
   import type { LoginParams } from '../../type'
   import { useNavigate } from 'react-router-dom'
+  import { useDispatch } from'react-redux'
+  import { getUserInfo } from '../../store/model/user';
+  import { AppDispatch } from '../../store';
+
   type LoginType = 'account'
   const codeStyle: CSSProperties = {
     display: 'flex'
@@ -25,6 +29,7 @@
   }
   
   const Page = () => {
+    const dispatch: AppDispatch = useDispatch()
     const [loginType, setLoginType] = useState<LoginType>('account')
     const { token } = theme.useToken()
     const [ codeImg, setCode ] = useState('')
@@ -37,6 +42,7 @@
         message.success('登录成功')
         navigate('/')
         localStorage.setItem('token',res.data.data.token)
+        dispatch(getUserInfo())
       }else if(res.data.code === 1005) {
         message.error('验证码错误')
         getCaptach()
